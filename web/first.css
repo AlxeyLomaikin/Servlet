@@ -1,0 +1,8 @@
+a {font-size:16px; color:#0000FF}
+a:hover {font-size:16px; color: #ff4f84; font-weight:bold}
+a.active {font-size:16px; color: #c721be  }
+a.active:hover {font-size:16px; color: #ff4f84; font-weight:bold}
+table {b:5; border-collapse: collapse; border: 1px solid black}
+tr.header {background-color: silver}
+td {padding: 5px; border: 1px solid black}
+th {padding: 5px; border: 1px solid black}
