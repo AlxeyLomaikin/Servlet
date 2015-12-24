@@ -226,7 +226,6 @@ public class FirstServlet extends GenericServlet {
                 }
                 w.append("</tr>");
 
-
                 while (rs.next()) {
                     w.append("<tr>");
                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
