@@ -44,43 +44,6 @@ public class FirstServlet extends GenericServlet {
         }
     }
 
-    public int parseQuery(String query){
-        int query_type = -1;
-        if (query!=null){
-            String sql_query = query.trim().toLowerCase();
-            String[] sql = sql_query.split(" ");
-            if (sql.length>0){
-                switch (sql[0]){
-                    case "use":
-                        if (sql.length==2)
-                            query_type=Query_Types.USE_DATABASE;
-                        break;
-                    case "create":
-                        if (sql.length==3)
-                            if (sql[1].equals("database"))
-                                query_type=Query_Types.CREATE_DATABASE;
-                        break;
-                    case "drop":
-                        if (sql.length==3)
-                            if (sql[1].equals("database"))
-                                query_type=Query_Types.DROP_DATABASE;
-                        break;
-                    case "select":
-                    case "select*":
-                        query_type = Query_Types.SELECT_DATA;
-                        break;
-                    case "":
-                        query_type = -1;
-                        break;
-                    default:
-                        query_type = Query_Types.UPDATE_QUERY;
-                        break;
-                }
-            }
-        }
-        return query_type;
-    }
-
     @Override
     public void service(ServletRequest servletRequest,
                         ServletResponse servletResponse) throws ServletException, IOException {
@@ -149,7 +112,7 @@ public class FirstServlet extends GenericServlet {
 
 
     private void executeSql(String sql) throws ServletException, IOException{
-        int query_type = parseQuery(sql);
+        int query_type = Query_Types.parseQuery(sql);
         switch (query_type){
             case Query_Types.CREATE_DATABASE:
                 createDB(sql.trim());
