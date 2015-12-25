@@ -110,8 +110,7 @@ public class FirstServlet extends GenericServlet {
         //links to change parameter "use" of servlet - database will be changed
         for (int i=0;i<dbNames.size();i++){
             if (dbNames.get(i).equals(curDatabase))
-                w.print("<a class=\"active\" href=\"/first?use="
-                        + dbNames.get(i) + "\">" + dbNames.get(i) + "</a>" + tab);
+                w.print("<a class=\"active\">" + dbNames.get(i) + "</a>" + tab);
             else
                 w.print("<a href=\"/first?use=" + dbNames.get(i) + "\">" + dbNames.get(i) + "</a>" + tab);
         }
