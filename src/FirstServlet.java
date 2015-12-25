@@ -101,9 +101,9 @@ public class FirstServlet extends GenericServlet {
         String sql = servletRequest.getParameter("sql");
         String use = servletRequest.getParameter("use");
         if (use!=null)
-            useDB("use "+ use + ";", w);
+            useDB("use "+ use + ";");
         if (sql!=null)
-            executeSql(sql, w);
+            executeSql(sql);
 
         w.println("<pre>databases:</pre>");
 
@@ -121,6 +121,7 @@ public class FirstServlet extends GenericServlet {
             w.println("<TEXTAREA name=sql cols=90 rows=8>");
         else
             w.println("<TEXTAREA style=\"border: 2px solid red\" name=sql cols=90 rows=8>");
+
         if(sql != null) {
             w.print(sql);
         }
@@ -135,14 +136,11 @@ public class FirstServlet extends GenericServlet {
         if (lasSelectionHTML.size()!=0)
             for (String tag: lasSelectionHTML)
                 w.append(tag);
+
         for (int i =0; i<Errors.size(); i++){
             w.println("<p>" + Errors.get(i));
         }
         Errors.clear();
-
-        if (sql != null) {
-            w.println("<BR>");
-        }
 
         w.println("</BODY>");
         w.println("</HTML>");
@@ -150,27 +148,27 @@ public class FirstServlet extends GenericServlet {
     }
 
 
-    private void executeSql(String sql, PrintWriter writer) throws ServletException, IOException{
+    private void executeSql(String sql) throws ServletException, IOException{
         int query_type = parseQuery(sql);
         switch (query_type){
             case Query_Types.CREATE_DATABASE:
-                createDB(sql.trim(), writer);
+                createDB(sql.trim());
                 break;
             case Query_Types.DROP_DATABASE:
-                dropDB(sql.trim(), writer);
+                dropDB(sql.trim());
                 break;
             case Query_Types.USE_DATABASE:
-                useDB(sql.trim(), writer);
+                useDB(sql.trim());
                 break;
             case Query_Types.UPDATE_QUERY:
                 if (!curDatabase.equals(""))
-                    executeUpdQuery(sql.trim(),writer);
+                    executeUpdQuery(sql.trim());
                 else
                     Errors.add("\nDatabase not selected");
                 break;
             case Query_Types.SELECT_DATA:
                 if (!curDatabase.equals(""))
-                    selectData(sql.trim(), writer);
+                    selectData(sql.trim());
                 else
                     Errors.add("\nDatabase not selected");
                 break;
@@ -180,7 +178,7 @@ public class FirstServlet extends GenericServlet {
         }
     }
 
-    private void useDB(String sql, PrintWriter w){
+    private void useDB(String sql){
         String dbName = sql.split(" ")[1];
         if (dbName.charAt(dbName.length()-1)==';')
             dbName = dbName.replace(";","");
@@ -204,7 +202,7 @@ public class FirstServlet extends GenericServlet {
         }
     }
 
-    private void selectData (String sql, PrintWriter w){
+    private void selectData (String sql){
         lasSelectionHTML.clear();
         if (con!=null) {
             Statement st = null;
@@ -232,7 +230,6 @@ public class FirstServlet extends GenericServlet {
                     lasSelectionHTML.add("</tr>");
                 }
                 lasSelectionHTML.add("</table>");
-                w.flush();
             } catch (SQLException ex) {
                 Errors.add(ex.getMessage());
             }finally{
@@ -247,13 +244,12 @@ public class FirstServlet extends GenericServlet {
         else Errors.add("Connection error");
     }
 
-    private void executeUpdQuery(String sql, PrintWriter w) {
+    private void executeUpdQuery(String sql) {
         if (con != null) {
             Statement st = null;
             try {
                 st = con.createStatement();
                 st.executeUpdate(sql);
-                w.append("<p>Request was executed successfully.</p>");
             } catch (SQLException ex) {
                 Errors.add(ex.getMessage());
             }finally{
@@ -266,7 +262,7 @@ public class FirstServlet extends GenericServlet {
         } else Errors.add("Connection error");
     }
 
-    private void dropDB(String sql, PrintWriter w){
+    private void dropDB(String sql){
         if (con != null) {
             Statement statement = null;
             try {
@@ -291,7 +287,7 @@ public class FirstServlet extends GenericServlet {
         else Errors.add("connection error");
     }
 
-    private void createDB(String sql, PrintWriter w) {
+    private void createDB(String sql) {
         if (con != null) {
             Statement statement = null;
             try {
