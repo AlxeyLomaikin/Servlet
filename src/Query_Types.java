@@ -44,4 +44,5 @@ public class Query_Types {
         }
         return query_type;
     }
+
 }

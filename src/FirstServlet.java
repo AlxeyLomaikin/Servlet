@@ -79,16 +79,16 @@ public class FirstServlet extends GenericServlet {
         }
 
         w.println("<p>please, type your request");
+
         w.println("<br><FORM action=/first method=service>");
+
         if (Errors.size()==0)
             w.println("<TEXTAREA name=sql cols=90 rows=8>");
         else
             w.println("<TEXTAREA style=\"border: 2px solid red\" name=sql cols=90 rows=8>");
-
         if(sql != null) {
             w.print(sql);
         }
-
         w.println("</TEXTAREA>");
 
         w.println("<INPUT TYPE=submit value=execute>");
@@ -107,6 +107,7 @@ public class FirstServlet extends GenericServlet {
 
         w.println("</BODY>");
         w.println("</HTML>");
+        w.flush();
         w.close();
     }
 
