@@ -14,7 +14,8 @@ public class FirstServlet extends GenericServlet {
     private ArrayList<String> dbNames = new ArrayList<>();
     private String curDatabase = "";
 
-    private ArrayList<String>updDatabasesResult = new ArrayList<>();
+    private ArrayList<String>Errors = new ArrayList<>();
+    private ArrayList<String> lasSelectionHTML = new ArrayList<>();
     private final String tab = "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp";
 
     @Override
@@ -102,19 +103,7 @@ public class FirstServlet extends GenericServlet {
         if (use!=null)
             useDB("use "+ use + ";", w);
         if (sql!=null)
-            switch (parseQuery(sql)){
-                case Query_Types.CREATE_DATABASE:
-                    createDB(sql.trim(), w);
-                    break;
-                case Query_Types.DROP_DATABASE:
-                    dropDB(sql.trim(), w);
-                    break;
-                case Query_Types.USE_DATABASE:
-                    useDB(sql.trim(), w);
-                    break;
-                default:
-                    break;
-            }
+            executeSql(sql, w);
 
         w.println("<pre>databases:</pre>");
 
@@ -129,8 +118,10 @@ public class FirstServlet extends GenericServlet {
 
         w.println("<p>please, type your request");
         w.println("<br><FORM action=/first method=service>");
-        w.println("<TEXTAREA name=sql cols=90 rows=8>");
-
+        if (Errors.size()==0)
+            w.println("<TEXTAREA name=sql cols=90 rows=8>");
+        else
+            w.println("<TEXTAREA style=\"border: 2px solid red\" name=sql cols=90 rows=8>");
         if(sql != null) {
             w.print(sql);
         }
@@ -142,43 +133,50 @@ public class FirstServlet extends GenericServlet {
 
         w.println("<BR>");
 
-        for (int i =0; i<updDatabasesResult.size(); i++){
-            w.println("<p>" + updDatabasesResult.get(i));
+        if (lasSelectionHTML.size()!=0)
+            for (String tag: lasSelectionHTML)
+                w.append(tag);
+        for (int i =0; i<Errors.size(); i++){
+            w.println("<p>" + Errors.get(i));
         }
+        Errors.clear();
 
         if (sql != null) {
             w.println("<BR>");
-            if (!curDatabase.equals(""))
-                executeSql(sql.trim(), servletResponse);
-            else
-                w.println("Database not selected!");
         }
 
         w.println("</BODY>");
         w.println("</HTML>");
         w.close();
-        updDatabasesResult.clear();
     }
 
 
-    private void executeSql(String sql, ServletResponse response) throws ServletException, IOException{
-        PrintWriter w = response.getWriter();
+    private void executeSql(String sql, PrintWriter writer) throws ServletException, IOException{
         int query_type = parseQuery(sql);
         switch (query_type){
             case Query_Types.CREATE_DATABASE:
+                createDB(sql.trim(), writer);
                 break;
             case Query_Types.DROP_DATABASE:
+                dropDB(sql.trim(), writer);
                 break;
             case Query_Types.USE_DATABASE:
-                break;
-            case Query_Types.SELECT_DATA:
-                selectData(sql, w);
+                useDB(sql.trim(), writer);
                 break;
             case Query_Types.UPDATE_QUERY:
-                executeUpdQuery(sql,w);
+                if (!curDatabase.equals(""))
+                    executeUpdQuery(sql.trim(),writer);
+                else
+                    Errors.add("\nDatabase not selected");
+                break;
+            case Query_Types.SELECT_DATA:
+                if (!curDatabase.equals(""))
+                    selectData(sql.trim(), writer);
+                else
+                    Errors.add("\nDatabase not selected");
                 break;
             default:
-                w.println("Incorrect request!");
+                Errors.add("\nIncorrect request!");
                 break;
         }
     }
@@ -193,61 +191,61 @@ public class FirstServlet extends GenericServlet {
                     con.close();
                 con = DriverManager.getConnection("jdbc:mysql://localhost/" + dbName, "root", "smosh4071");
                 this.curDatabase = dbName;
-                updDatabasesResult.add("Database was changed");
             }catch (SQLException ex){
-                updDatabasesResult.add(ex.getMessage());
+                Errors.add(ex.getMessage());
             }
         else if (!dbNames.contains(dbName)) {
             try{
                 con = DriverManager.getConnection("jdbc:mysql://localhost/", "root", "smosh4071");
             }catch (SQLException ex){
-                w.println(ex.getMessage());
+                Errors.add(ex.getMessage());
             }
             this.curDatabase="";
-            updDatabasesResult.add("Database with name `" + dbName + "` is not exist!");
+            Errors.add("Database with name `" + dbName + "` is not exist!");
         }
     }
 
     private void selectData (String sql, PrintWriter w){
+        lasSelectionHTML.clear();
         if (con!=null) {
             Statement st = null;
             ResultSet rs = null;
             try {
                 st = con.createStatement();
                 rs = st.executeQuery(sql);
-                w.append("<table>");
-                w.append("<caption><b><p>Result of selection :</b></caption>");
+                lasSelectionHTML.add("<table>");
+                lasSelectionHTML.add("<caption><b><p>Result of selection :</b></caption>");
 
-                w.append("<tr class=\"header\">");
+                lasSelectionHTML.add("<tr class=\"header\">");
                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                    w.append("<th>");
-                    w.append(rs.getMetaData().getColumnName(i));
-                    w.append("</th>");
+                    lasSelectionHTML.add("<th>");
+                    lasSelectionHTML.add(rs.getMetaData().getColumnName(i));
+                    lasSelectionHTML.add("</th>");
                 }
-                w.append("</tr>");
+                lasSelectionHTML.add("</tr>");
 
                 while (rs.next()) {
-                    w.append("<tr>");
+                    lasSelectionHTML.add("<tr>");
                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
                         String td = "<td>" + rs.getString(i) + "</td>";
-                        w.append(td);
+                        lasSelectionHTML.add(td);
                     }
-                    w.append("</tr>");
+                    lasSelectionHTML.add("</tr>");
                 }
-                w.append("</table>");
+                lasSelectionHTML.add("</table>");
                 w.flush();
             } catch (SQLException ex) {
-                w.println(ex.getMessage());
+                Errors.add(ex.getMessage());
             }finally{
                 try {
                     if (st != null) st.close();
                     if (rs != null) rs.close();
                 }catch(SQLException ex){
-                    w.println(ex.getMessage());
+                    ex.getMessage();
                 }
             }
         }
-        else w.println("Connection error");
+        else Errors.add("Connection error");
     }
 
     private void executeUpdQuery(String sql, PrintWriter w) {
@@ -258,7 +256,7 @@ public class FirstServlet extends GenericServlet {
                 st.executeUpdate(sql);
                 w.append("<p>Request was executed successfully.</p>");
             } catch (SQLException ex) {
-                w.println(ex.getMessage());
+                Errors.add(ex.getMessage());
             }finally{
                 try{
                     if (st!=null) st.close();
@@ -266,7 +264,7 @@ public class FirstServlet extends GenericServlet {
                     ex.getMessage();
                 }
             }
-        } else w.println("Connection error");
+        } else Errors.add("Connection error");
     }
 
     private void dropDB(String sql, PrintWriter w){
@@ -281,18 +279,17 @@ public class FirstServlet extends GenericServlet {
                 } else
                     statement.executeUpdate(sql + ";");
                 dbNames.remove(dbName);
-                updDatabasesResult.add("database `"+dbName+"` was successfully droped!");
             } catch (SQLException ex) {
-                updDatabasesResult.add(ex.getMessage());
+                Errors.add(ex.getMessage());
             } finally {
                 try {
                     if (statement != null) statement.close();
                 } catch (SQLException ex) {
-                    updDatabasesResult.add(ex.getMessage());
+                    ex.getMessage();
                 }
             }
         }
-        else updDatabasesResult.add("connection error");
+        else Errors.add("connection error");
     }
 
     private void createDB(String sql, PrintWriter w) {
@@ -307,18 +304,17 @@ public class FirstServlet extends GenericServlet {
                 } else
                     statement.executeUpdate(sql + ";");
                 dbNames.add(dbName);
-                updDatabasesResult.add("database `"+dbName+"` was successfully created");
             } catch (SQLException ex) {
-                updDatabasesResult.add(ex.getMessage());
+                Errors.add(ex.getMessage());
             } finally {
                 try {
                     if (statement != null) statement.close();
                 } catch (SQLException ex) {
-                    updDatabasesResult.add(ex.getMessage());
+                    ex.getMessage();
                 }
             }
         }
-        else updDatabasesResult.add("connection error");
+        else Errors.add("connection error");
     }
 
 }
